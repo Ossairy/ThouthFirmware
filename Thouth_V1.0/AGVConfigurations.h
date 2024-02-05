@@ -88,8 +88,22 @@ extern  bool Left_Stepper_taskcomplete;
 /* Define the Actuation System Reduction Ratio */
 
 #ifdef StepperActuated
+  
+  /* Please choose the right stepping configuration based on your stepper driver hardware */
+  #define FullStepping    /* Full Step*/
+  //#define HalfStepping  /* 1/2 Step*/
+  //#define MicroStepping   /* 1/16 Step*/
+
+
   //Replace with your values
-  #define Motor_Steps_per_Rotation                    200     /* suitable with the 2 phase stepper with 1.8 step angle */
+  #ifdef FullStepping
+    #define Motor_Steps_per_Rotation                           200     /* suitable with the 2 phase stepper with 1.8 step angle */  
+  #elif defined(HalfStepping)
+    #define Motor_Steps_per_Rotation                           400     /* suitable with the 2 phase stepper with 1.8 step angle */   
+  #elif defined(MicroStepping)
+  #define Motor_Steps_per_Rotation                             3200     /* suitable with the 2 phase stepper with 1.8 step angle */
+
+  #endif
 
   #ifdef Diffrential_Steering
     //Replace with your values
@@ -98,8 +112,8 @@ extern  bool Left_Stepper_taskcomplete;
     
     #else
     //Replace with your values
-    #define Right_reduction_ratio                   9  /* Reduction Ratio of the Right Stepper actuators */
-    #define Left_reduction_ratio                    9  /* Reduction Ratio of the Left Stepper actuators */ 
+    #define Right_reduction_ratio                   1  /* Reduction Ratio of the Right Stepper actuators */
+    #define Left_reduction_ratio                    1  /* Reduction Ratio of the Left Stepper actuators */ 
     
     #endif
 
@@ -108,15 +122,73 @@ extern  bool Left_Stepper_taskcomplete;
 
   #ifdef Ackerman_Steering
 
-    #define reduction_ratio                          9     /* Reduction Ratio of the Main Single Stepper actuators */
+    #define reduction_ratio                          1     /* Reduction Ratio of the Main Single Stepper actuators */
   #endif
 
 #endif
 
 
+#define Wheel_Diameter                               0.127  /*Make sure that you are using the right units.*/
+
+//#define Diameter_Defined_in_INCH 
+#define Diameter_Defined_in_METER 
+//#define Diameter_Defined_in_MILIMETER
+
+#ifdef StepperActuated
+  #ifdef Diffrential_Steering
+     #ifdef SameSystem_On_Left_Right
+       #define Actuator_Steps_Per_Rotation                  ((reduction_ratio)*(Motor_Steps_per_Rotation))
+       #define Meter_Per_rotation                           ((Wheel_Diameter)*3.14)
+       #define Steps_Per_Meter                              ((Actuator_Steps_Per_Rotation)/Meter_Per_rotation)
+     #else
+       #define Right_Actuator_Steps_Per_Rotation            ((Right_reduction_ratio)*(Motor_Steps_per_Rotation))
+       #define Left_Actuator_Steps_Per_Rotation             ((Left_reduction_ratio)*(Motor_Steps_per_Rotation))
+       #define Meter_Per_rotation                           ((Wheel_Diameter)*3.14)
+       #define Right_Steps_Per_Meter                        ((Right_Actuator_Steps_Per_Rotation)/Meter_Per_rotation)
+       #define Left_Steps_Per_Meter                         ((Left_Actuator_Steps_Per_Rotation)/Meter_Per_rotation)
+      
+     #endif
+  #endif
+
+#endif
+
+#ifdef Diffrential_Steering
+
+/* Invert any Actuator based on the hardware response */
+
+ //#define Invert_Right_Actuator_DIR
+ #define Invert_Left_Actuator_DIR
+
+#else
+
+  //#define Invert_Actuator_DIR
+
+#endif
 
 
+/**/
+#define Vehicle_Rotation_Center_Diameter           32.5/100
+#define Meter_per_full_Rotation                    Vehicle_Rotation_Center_Diameter*3.14 
 
+#ifdef StepperActuated
+  
+  #define Steps_per_Rotation_Correction               (12.5/360)
+       
+  #ifdef Diffrential_Steering  
+    #ifdef SameSystem_On_Left_Right
+       #define steps_per_full_Rotation                (Meter_per_full_Rotation*Steps_Per_Meter)
+    #else
+        #define Right_steps_per_full_Rotation          Meter_per_full_Rotation*Right_Steps_Per_Meter
+       #define Left_steps_per_full_Rotation           Meter_per_full_Rotation*Left_Steps_Per_Meter
+    
+    #endif
+  #else
+      #define steps_per_full_Rotation                (Meter_per_full_Rotation*Steps_Per_Meter*2)+Steps_per_Rotation_Correction   
+  #endif
+
+#endif
+
+//#define Invert_Vehicle_Heading     /* Invert the vehicle heading , uncomment that macro it the vehicle is moving backward when it has to move forward.*/
 //===========================================================================
 //============================= GyroScope Sensor ===========================
 //===========================================================================
@@ -133,10 +205,24 @@ extern  bool Left_Stepper_taskcomplete;
 /* Define which axis of rotation your AGV rotates about */
 /* Please note that the axis of rotation depends on the orientation of your IMU  */
 /* Uncomment only one axis of rotation */
-#define USE_Rotation_about_X      /* Rotation about X-axis */
+//#define USE_Rotation_about_X      /* Rotation about X-axis */
 //#define USE_Rotation_about_Y      /* Rotation about Y-axis */
-//#define USE_Rotation_about_Z      /* Rotation about Z-axis */ /* Please note that the rotation about z is not filtered so it is not recommended to use this option */
+#define USE_Rotation_about_Z      /* Rotation about Z-axis */ /* Please note that the rotation about z is not filtered so you will have to deal with drift */
+
+/*Uncomment if the holding orientation correction is reversed */
+#define Invert_Orientation_Correction
 
 
+//#define PID_Orientation_correction 
+
+#ifdef  PID_Orientation_correction
+
+ #define Orientation_correction_Kp                                  0.5
+ #define Orientation_correction_Ki                                  0.1
+ #define Orientation_correction_Kd                                  0.2
+
+#endif
+
+#define Orientation_correction_Factor                              0.5      /* comment if you are using PID control for the orientation correctionj */
 
 
